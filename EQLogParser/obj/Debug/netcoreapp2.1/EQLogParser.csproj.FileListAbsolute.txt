@@ -1,0 +1,11 @@
+D:\Dropbox\Steve\Code\Visual Studio - Projects\visual studio 2017\Projects\EQLogParser\EQLogParser\bin\Debug\netcoreapp2.1\EQLogParser.deps.json
+D:\Dropbox\Steve\Code\Visual Studio - Projects\visual studio 2017\Projects\EQLogParser\EQLogParser\bin\Debug\netcoreapp2.1\EQLogParser.runtimeconfig.json
+D:\Dropbox\Steve\Code\Visual Studio - Projects\visual studio 2017\Projects\EQLogParser\EQLogParser\bin\Debug\netcoreapp2.1\EQLogParser.runtimeconfig.dev.json
+D:\Dropbox\Steve\Code\Visual Studio - Projects\visual studio 2017\Projects\EQLogParser\EQLogParser\bin\Debug\netcoreapp2.1\EQLogParser.dll
+D:\Dropbox\Steve\Code\Visual Studio - Projects\visual studio 2017\Projects\EQLogParser\EQLogParser\bin\Debug\netcoreapp2.1\EQLogParser.pdb
+D:\Dropbox\Steve\Code\Visual Studio - Projects\visual studio 2017\Projects\EQLogParser\EQLogParser\obj\Debug\netcoreapp2.1\EQLogParser.csprojAssemblyReference.cache
+D:\Dropbox\Steve\Code\Visual Studio - Projects\visual studio 2017\Projects\EQLogParser\EQLogParser\obj\Debug\netcoreapp2.1\EQLogParser.csproj.CoreCompileInputs.cache
+D:\Dropbox\Steve\Code\Visual Studio - Projects\visual studio 2017\Projects\EQLogParser\EQLogParser\obj\Debug\netcoreapp2.1\EQLogParser.AssemblyInfoInputs.cache
+D:\Dropbox\Steve\Code\Visual Studio - Projects\visual studio 2017\Projects\EQLogParser\EQLogParser\obj\Debug\netcoreapp2.1\EQLogParser.AssemblyInfo.cs
+D:\Dropbox\Steve\Code\Visual Studio - Projects\visual studio 2017\Projects\EQLogParser\EQLogParser\obj\Debug\netcoreapp2.1\EQLogParser.dll
+D:\Dropbox\Steve\Code\Visual Studio - Projects\visual studio 2017\Projects\EQLogParser\EQLogParser\obj\Debug\netcoreapp2.1\EQLogParser.pdb

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "EQLogParser": {
+      "commandName": "Project",
+      "commandLineArgs": "C:\\Everquest\\p99\\Logs\\eqlog_Khartik_project1999.txt"
+    }
+  }
+}
