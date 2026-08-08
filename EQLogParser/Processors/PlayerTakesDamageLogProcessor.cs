@@ -6,7 +6,7 @@ namespace EQLogParser.Processors
     {
         private readonly ILogger _logger;
         public EverquestLogReader.LogType LogType => EverquestLogReader.LogType.PlayerTakesDamage;
-        private const string HitPattern = @"^\[.*?\].*\bYOU for\b\s\d+\s\bpoints of damage\b\.";
+        private const string HitPattern = @".*\bYOU for\b\s\d+\s\bpoints of damage\b\.";
 
         private Regex _hitRegex = new Regex(HitPattern, RegexOptions.IgnoreCase);
 

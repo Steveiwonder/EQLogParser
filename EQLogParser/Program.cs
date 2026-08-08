@@ -9,24 +9,33 @@ namespace EQLogParser
     {
         public string Path { get; set; }
     }
+
+    public class SpellFile
+    {
+        public string Path { get; set; }
+    }
+
     class Program
     {
+        private const string DefaultLegendsSpellFilePath = @"C:\Users\Public\Daybreak Game Company\Installed Games\EverQuest Legends\spells_us.txt";
 
 
         static void Main(string[] args)
         {
 
-            if (args.Length != 1)
+            if (args.Length < 1 || args.Length > 2)
             {
-                Console.WriteLine("Supply log file path");
+                Console.WriteLine("Usage: EQLogParser <log file path> [spell file path]");
                 return;
             }
 
             string logFilePath = args[0];
+            string spellFilePath = args.Length == 2 ? args[1] : DefaultLegendsSpellFilePath;
             IServiceCollection serviceCollection = new ServiceCollection();
             serviceCollection.AddSingleton<ILogger, ConsoleLogger>();
             serviceCollection.AddSingleton<EverquestLogReader>();
             serviceCollection.AddSingleton(new LogFile() { Path = logFilePath });
+            serviceCollection.AddSingleton(new SpellFile() { Path = spellFilePath });
 
 
             serviceCollection.AddSingleton<ILogProcessor, NpcMissedYouLogProcessor>();
@@ -42,7 +51,8 @@ namespace EQLogParser
             serviceCollection.AddSingleton<CurrentSpellCast>();
             serviceCollection.AddSingleton(provider =>
             {
-                SpellParser spellParser = new SpellParser(@"C:\Everquest\p99\spells_en.txt");
+                SpellFile spellFile = provider.GetRequiredService<SpellFile>();
+                SpellParser spellParser = new SpellParser(spellFile.Path);
                 return spellParser.GetSpells();
 
             });

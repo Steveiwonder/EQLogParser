@@ -5,7 +5,7 @@ namespace EQLogParser.Processors
     public class NpcMissedYouLogProcessor : ILogProcessor
     {
         private readonly ILogger _logger;
-        private const string MissPattern = @"^\[.*?\].*\bYou, but misses";
+        private const string MissPattern = @".*\bYou, but misses";
         private Regex _missRegex = new Regex(MissPattern, RegexOptions.IgnoreCase);
         public EverquestLogReader.LogType LogType => EverquestLogReader.LogType.NpcMissedYou;
 

@@ -19,10 +19,13 @@ namespace EQLogParser.Processors
         public bool IsMatch(LogLine line)
         {
 
-            IEnumerable<Spell> spells = _spellCache.GetSpellsByMessage(line.Message).ToList();
-            if (_spells!=null && _spells.Any())
+            IEnumerable<Spell> spells = _spellCache.GetSpellsByMessage(line.Message)
+                .Where(x => x.Duration != null && x.Duration.Value.TotalMilliseconds > 0)
+                .ToList();
+
+            if (spells.Any())
             {
-                if (_spells.Count(x => x.MessageYou == line.Message && x.TargetType == TargetTypes.Single) == 1)
+                if (spells.Count(x => x.MessageYou == line.Message) == 1)
                 {
 
                     _spells = spells;
@@ -39,13 +42,14 @@ namespace EQLogParser.Processors
 
         public void Process(LogLine line)
         {
-            var v = this._spells.Where(x => x.MessageYou == line.Message && x.TargetType == TargetTypes.Single);
-            Spell spell = this._spells.SingleOrDefault(x => x.MessageYou == line.Message && x.TargetType == TargetTypes.Single);
+            Spell spell = this._spells.SingleOrDefault(x => x.MessageYou == line.Message);
 
             if (spell != null)
             {
                 _buffManager.AddBuff("__YOU__", spell.ToBuff(line.When));
             }
+
+            _spells = null;
         }
     }
 }

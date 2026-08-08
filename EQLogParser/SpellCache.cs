@@ -32,6 +32,7 @@ namespace EQLogParser
                 messageYou = new {spell = s, message = s.MessageYou},
                 messageTarget = new {spell = s, message = s.MessageTarget}
             }).SelectMany(x => new[] {x.messageEnded, x.messageTarget, x.messageYou})
+                .Where(x => !string.IsNullOrWhiteSpace(x.message))
                 .ToLookup(x=>x.message, x => x.spell);
             
             
