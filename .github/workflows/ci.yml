@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore EQLogParser.sln
+
+      - name: Build
+        run: dotnet build EQLogParser.sln --configuration Release --no-restore
+
+      - name: Build API Docker image
+        run: docker build -f EQLogParser.Api/Dockerfile -t eqlogparser-api:ci .

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EQ Log Parser</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <h1>EQ Log Parser</h1>
+        <p id="updatedAt">Waiting for parser updates</p>
+      </div>
+      <div id="connectionState" class="state state-waiting">Connecting</div>
+    </header>
+
+    <section class="cast-panel">
+      <div class="panel-label">Current Cast</div>
+      <div id="castName" class="cast-name">Idle</div>
+      <div id="castState" class="cast-state"></div>
+    </section>
+
+    <section id="players" class="players"></section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@10.0.0/dist/browser/signalr.min.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
