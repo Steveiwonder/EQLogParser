@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace EQLogParser.Processors
 {
@@ -11,13 +12,13 @@ namespace EQLogParser.Processors
         private const string Pattern = @"(\byou begin casting\b)(?<spell>.*)\.";
         private readonly Regex _regex = new Regex(Pattern, RegexOptions.IgnoreCase);
 
-
         public SpellCastBeginLogProcessor(ILogger logger, CurrentSpellCast currentSpellCast, SpellCache spellCache)
         {
             _logger = logger;
             _currentSpellCast = currentSpellCast;
             _spellCache = spellCache;
         }
+
         public bool IsMatch(LogLine line)
         {
             return _regex.IsMatch(line.Message);
@@ -25,14 +26,15 @@ namespace EQLogParser.Processors
 
         public void Process(LogLine line)
         {
-            //_logger.WriteLine(line, ConsoleColor.Gray, LogType);
             Match matches = _regex.Match(line.Message);
+            string spellName = matches.Groups["spell"].Value.Trim();
 
-            var spellName = matches.Groups["spell"].Value.Trim();
-            
             Spell spell = _spellCache.GetSpellByName(spellName);
+            string[] landedMessages = new[] { spell.MessageYou, spell.MessageTarget }
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToArray();
 
-            _currentSpellCast.BeginCast(spellName, new []{ spell.MessageYou, spell.MessageTarget});
+            _currentSpellCast.BeginCast(spellName, landedMessages);
         }
     }
 }
