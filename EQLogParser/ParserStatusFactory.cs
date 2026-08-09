@@ -8,11 +8,16 @@ namespace EQLogParser
     {
         private readonly IBuffManager _buffManager;
         private readonly CurrentSpellCast _currentSpellCast;
+        private readonly StartupScanState _startupScanState;
 
-        public ParserStatusFactory(IBuffManager buffManager, CurrentSpellCast currentSpellCast)
+        public ParserStatusFactory(
+            IBuffManager buffManager,
+            CurrentSpellCast currentSpellCast,
+            StartupScanState startupScanState)
         {
             _buffManager = buffManager;
             _currentSpellCast = currentSpellCast;
+            _startupScanState = startupScanState;
         }
 
         public ParserStatusUpdate Create()
@@ -20,6 +25,7 @@ namespace EQLogParser
             return new ParserStatusUpdate()
             {
                 UpdatedAt = DateTimeOffset.Now,
+                StartupScan = _startupScanState.Current,
                 CurrentCast = new CastStatus()
                 {
                     IsCasting = _currentSpellCast.IsCasting,

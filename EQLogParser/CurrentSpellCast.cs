@@ -72,6 +72,15 @@ namespace EQLogParser
             ClearCast();
         }
 
+        public void Reset()
+        {
+            IsCasting = false;
+            LastCastFizzled = false;
+            LastCastInterrupted = false;
+            LastCastDidNotTakeHold = false;
+            ClearCast();
+        }
+
         private void ClearCast()
         {
             Name = null;

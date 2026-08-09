@@ -47,6 +47,7 @@ namespace EQLogParser.Api
             return new ParserStatusUpdate()
             {
                 UpdatedAt = status.UpdatedAt,
+                StartupScan = status.StartupScan,
                 CurrentCast = status.CurrentCast,
                 Players = status.Players
                     .Select(player => new PlayerStatus()

@@ -6,8 +6,19 @@ namespace EQLogParser.Contracts
     public class ParserStatusUpdate
     {
         public DateTimeOffset UpdatedAt { get; set; }
+        public StartupScanStatus StartupScan { get; set; } = new StartupScanStatus();
         public CastStatus CurrentCast { get; set; } = new CastStatus();
         public IReadOnlyList<PlayerStatus> Players { get; set; } = Array.Empty<PlayerStatus>();
+    }
+
+    public class StartupScanStatus
+    {
+        public bool IsScanning { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public int Percent { get; set; }
+        public long LinesScanned { get; set; }
+        public DateTime? WindowStart { get; set; }
+        public DateTime? WindowEnd { get; set; }
     }
 
     public class CastStatus

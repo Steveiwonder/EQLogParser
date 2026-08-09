@@ -13,6 +13,11 @@ namespace EQLogParser
             GetPlayer(playerName).ApplyBuff(buff);
         }
 
+        public void ExpireOrAddBuff(string playerName, Buff buff)
+        {
+            GetPlayer(playerName).ExpireOrApplyBuff(buff);
+        }
+
         private Player GetPlayer(string playerName)
         {
             if (Players.ContainsKey(playerName))

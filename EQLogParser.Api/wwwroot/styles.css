@@ -75,6 +75,47 @@ p {
   background: #1c211e;
 }
 
+.startup-panel {
+  margin: 0 0 20px;
+  padding: 14px 16px;
+  border: 1px solid #30382f;
+  border-radius: 8px;
+  background: #1c211e;
+}
+
+.startup-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.startup-message {
+  margin-top: 4px;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.startup-percent {
+  color: #c2cabc;
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.startup-fill {
+  background: #64a8dc;
+}
+
+.startup-detail {
+  margin-top: 8px;
+  color: #aab3a3;
+  font-size: 13px;
+}
+
+.hidden {
+  display: none;
+}
+
 .panel-label {
   color: #aab3a3;
   font-size: 12px;

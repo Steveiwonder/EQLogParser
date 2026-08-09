@@ -60,10 +60,12 @@ namespace EQLogParser
             serviceCollection.AddSingleton<ILogProcessor, YourSpellCastFizzledLogProcessor>();
             serviceCollection.AddSingleton<ILogProcessor, YourSpellCastWasInterruptedLogProcessor>();
             serviceCollection.AddSingleton<ILogProcessor, YouLoseBuffLogProcessor>();
+            serviceCollection.AddSingleton<ILogProcessor, SpellWornOffLogProcessor>();
             serviceCollection.AddSingleton<ILogProcessor, SpellCastDidNotTakeHoldLogProcessor>();
             serviceCollection.AddSingleton<IBuffManager, BuffManager>();
             serviceCollection.AddSingleton<CurrentSpellCast>();
             serviceCollection.AddSingleton<PlayerLevelState>();
+            serviceCollection.AddSingleton<StartupScanState>();
             serviceCollection.AddSingleton<SpellDurationCalculator>();
             serviceCollection.AddSingleton<ParserStatusFactory>();
             serviceCollection.AddSingleton<IStatusPublisher, RemoteStatusPublisher>();

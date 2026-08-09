@@ -1,4 +1,4 @@
-﻿namespace EQLogParser.Processors
+namespace EQLogParser.Processors
 {
     public interface ILogProcessor
     {
@@ -6,5 +6,10 @@
 
         bool IsMatch(LogLine line);
         void Process(LogLine line);
+    }
+
+    public interface IStartupLogProcessor : ILogProcessor
+    {
+        bool IsStartupMatch(LogLine line);
     }
 }

@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace EQLogParser.Processors
 {
-    public class SpellCastLandedLogProcessor : ILogProcessor
+    public class SpellCastLandedLogProcessor : IStartupLogProcessor
     {
         private readonly CurrentSpellCast _currentSpellCast;
         private readonly IBuffManager _buffManager;
@@ -28,6 +28,12 @@ namespace EQLogParser.Processors
         public bool IsMatch(LogLine line)
         {
             _match = GetCurrentCastMatch(line) ?? GetDirectMessageMatch(line);
+            return _match != null;
+        }
+
+        public bool IsStartupMatch(LogLine line)
+        {
+            _match = GetCurrentCastMatch(line);
             return _match != null;
         }
 

@@ -6,7 +6,7 @@ namespace EQLogParser
 {
     public class SpellCache
     {
-        private readonly IDictionary<string, List<Spell>> _spells = new Dictionary<string, List<Spell>>();
+        private readonly IDictionary<string, List<Spell>> _spells = new Dictionary<string, List<Spell>>(StringComparer.OrdinalIgnoreCase);
         private readonly ILookup<string, Spell> _spellsByEffectMessage;
         private readonly Spell[] _spellsWithTargetMessages;
 
@@ -42,6 +42,18 @@ namespace EQLogParser
         public Spell GetSpellByName(string spellName)
         {
             return _spells[spellName].First();
+        }
+
+        public bool TryGetSpellByName(string spellName, out Spell spell)
+        {
+            if (_spells.TryGetValue(spellName, out List<Spell> spells))
+            {
+                spell = spells.First();
+                return true;
+            }
+
+            spell = null;
+            return false;
         }
 
         public IEnumerable<Spell> GetSpellsByMessage(string message)

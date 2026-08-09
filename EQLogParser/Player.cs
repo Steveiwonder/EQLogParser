@@ -23,6 +23,18 @@ namespace EQLogParser
             _buffs.Add(buff.Name, buff);
         }
 
+        public void ExpireOrApplyBuff(Buff buff)
+        {
+            if (_buffs.ContainsKey(buff.Name))
+            {
+                _buffs[buff.Name].Expire();
+                return;
+            }
+
+            buff.Expire();
+            _buffs.Add(buff.Name, buff);
+        }
+
         public void ExpireBuff(string buffName)
         {
             if (_buffs.ContainsKey(buffName))

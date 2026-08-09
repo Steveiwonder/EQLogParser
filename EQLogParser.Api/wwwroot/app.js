@@ -3,6 +3,11 @@ const updatedAt = document.getElementById("updatedAt");
 const castName = document.getElementById("castName");
 const castState = document.getElementById("castState");
 const playersContainer = document.getElementById("players");
+const startupPanel = document.getElementById("startupPanel");
+const startupMessage = document.getElementById("startupMessage");
+const startupPercent = document.getElementById("startupPercent");
+const startupFill = document.getElementById("startupFill");
+const startupDetail = document.getElementById("startupDetail");
 
 function setConnectionState(text, className) {
   connectionState.textContent = text;
@@ -21,12 +26,14 @@ function renderStatus(status) {
     updatedAt.textContent = "Waiting for parser updates";
     castName.textContent = "Idle";
     castState.textContent = "";
+    startupPanel.classList.add("hidden");
     playersContainer.innerHTML = `<div class="empty">No active buffs</div>`;
     return;
   }
 
   const timestamp = new Date(status.updatedAt);
   updatedAt.textContent = `Updated ${timestamp.toLocaleTimeString()}`;
+  renderStartupScan(status.startupScan);
 
   const currentCast = status.currentCast || {};
   castName.textContent = currentCast.isCasting ? currentCast.name || "Casting" : "Idle";
@@ -45,6 +52,22 @@ function renderStatus(status) {
   }
 
   playersContainer.replaceChildren(...players.map(renderPlayer));
+}
+
+function renderStartupScan(startupScan) {
+  if (!startupScan || (!startupScan.isScanning && !startupScan.message)) {
+    startupPanel.classList.add("hidden");
+    return;
+  }
+
+  const percent = Math.max(0, Math.min(100, startupScan.percent || 0));
+  startupPanel.classList.toggle("hidden", !startupScan.isScanning && percent >= 100);
+  startupMessage.textContent = startupScan.message || "Scanning recent log entries";
+  startupPercent.textContent = `${percent}%`;
+  startupFill.style.width = `${percent}%`;
+  startupDetail.textContent = startupScan.linesScanned
+    ? `${startupScan.linesScanned.toLocaleString()} log lines scanned`
+    : "";
 }
 
 function renderPlayer(player) {
