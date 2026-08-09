@@ -16,6 +16,7 @@ namespace EQLogParser
         public string MessageTarget { get; set; }
         public string MessageEnded { get; set; }
         public TargetTypes TargetType { get; set; }
+        public bool IsDetrimental { get; set; }
 
         public Spell(string[] parts)
         {

@@ -67,6 +67,7 @@ namespace EQLogParser
             string castTime = parts[usesLegendsFormat ? LEGENDS_CAST_TIME_INDEX : CAST_TIME_INDEX];
             string manaCost = parts[usesLegendsFormat ? LEGENDS_MANA_COST_INDEX : MANA_COST_INDEX];
             string duration = parts[usesLegendsFormat ? LEGENDS_DURATION_INDEX : DURATION_INDEX];
+            TargetTypes targetType = Enum.Parse<TargetTypes>(parts[TARGET_TYPE_INDEX]);
 
             return new Spell(parts)
             {
@@ -77,8 +78,15 @@ namespace EQLogParser
                 MessageYou = usesExternalMessages ? messages.MessageYou : parts[MESSAGE_YOU_INDEX],
                 MessageTarget = usesExternalMessages ? messages.MessageTarget : parts[MESSAGE_TARGET_INDEX],
                 Name = parts[NAME_INDEX],
-                TargetType = Enum.Parse<TargetTypes>(parts[TARGET_TYPE_INDEX])
+                TargetType = targetType,
+                IsDetrimental = usesLegendsFormat && IsLegendsDetrimentalTargetType(targetType)
             };
+        }
+
+        private static bool IsLegendsDetrimentalTargetType(TargetTypes targetType)
+        {
+            int targetTypeValue = (int)targetType;
+            return targetTypeValue == 20 || targetTypeValue == 126;
         }
 
         private IDictionary<int, SpellMessages> GetSpellMessages()

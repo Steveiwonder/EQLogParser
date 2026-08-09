@@ -70,7 +70,13 @@ function renderBuff(buff) {
   const row = document.createElement("div");
   row.className = "buff";
 
-  const meterClass = percent <= 20 ? "low" : percent <= 45 ? "medium" : "";
+  const meterClass = buff.isDetrimental
+    ? "detrimental"
+    : percent <= 20
+      ? "low"
+      : percent <= 45
+        ? "medium"
+        : "";
   row.innerHTML = `
     <div class="buff-name">${escapeHtml(buff.name || "Unknown")}</div>
     <div class="buff-time">${formatTime(buff.timeLeftSeconds)}</div>

@@ -175,6 +175,10 @@ p {
   background: #d5bd5d;
 }
 
+.meter-fill.detrimental {
+  background: #dc6b5f;
+}
+
 .empty {
   padding: 28px 0;
   color: #aab3a3;

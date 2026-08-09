@@ -33,5 +33,6 @@ namespace EQLogParser.Contracts
         public double DurationSeconds { get; set; }
         public double TimeLeftSeconds { get; set; }
         public int Percent { get; set; }
+        public bool IsDetrimental { get; set; }
     }
 }

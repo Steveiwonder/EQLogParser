@@ -15,7 +15,8 @@ namespace EQLogParser
                 Name = spell.Name,
                 Expires = landedTime.Add(spell.Duration.Value),
                 Landed = landedTime,
-                Duration = spell.Duration.Value
+                Duration = spell.Duration.Value,
+                IsDetrimental = spell.IsDetrimental
             };
         }
     }

@@ -10,6 +10,7 @@ namespace EQLogParser
         public string Name { get; set; }
         public DateTime Expires { get; set; }
         public DateTime Landed { get; set; }
+        public bool IsDetrimental { get; set; }
 
         public TimeSpan TimeLeft => Expires - DateTime.Now;
         public TimeSpan Duration { get; set; }
