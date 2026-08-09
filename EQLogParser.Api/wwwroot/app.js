@@ -55,6 +55,17 @@ const state = {
   lastStatusAt: null
 };
 
+const dpsChartState = {
+  actorName: "",
+  samples: [],
+  currentDps: 0,
+  damageLastMinute: 0,
+  latestSampleMs: null,
+  latestSampleFrameAt: null,
+  displayNowMs: null,
+  frameId: null
+};
+
 applyTheme();
 themeToggle.addEventListener("click", toggleTheme);
 playerSelector.addEventListener("click", () => openSelector("player", playerSelector));
@@ -91,7 +102,7 @@ function toggleTheme() {
   state.theme = state.theme === "retro" ? "modern" : "retro";
   localStorage.setItem(storageKeys.theme, state.theme);
   applyTheme();
-  renderDpsChart();
+  drawDpsChartFrame();
 }
 
 function formatTime(seconds) {
@@ -349,19 +360,79 @@ function updateHeaderSummary(visibleCount) {
 
 function renderDpsChart() {
   const actor = getSelectedDamageActor();
-  const samples = actor?.samples || [];
+  const samples = normalizeDpsSamples(actor?.samples || []);
   const displayName = actor ? formatPlayerName(actor.name) : state.myPlayerName || "You";
+  const actorChanged = dpsChartState.actorName !== displayName;
+
   dpsActor.textContent = displayName;
   currentDps.textContent = actor ? actor.currentDps.toFixed(1) : "0.0";
   damageLastMinute.textContent = actor ? actor.damageLastMinute.toLocaleString() : "0";
   dpsEmpty.classList.toggle("hidden", samples.length > 0 && samples.some(sample => sample.dps > 0));
 
+  dpsChartState.actorName = displayName;
+  dpsChartState.samples = samples;
+  dpsChartState.currentDps = actor?.currentDps || 0;
+  dpsChartState.damageLastMinute = actor?.damageLastMinute || 0;
+  dpsChartState.latestSampleMs = samples.length ? samples[samples.length - 1].atMs : null;
+  dpsChartState.latestSampleFrameAt = performance.now();
+
+  if (actorChanged || dpsChartState.displayNowMs == null || !dpsChartState.latestSampleMs) {
+    dpsChartState.displayNowMs = dpsChartState.latestSampleMs;
+  }
+
+  if (samples.length === 0) {
+    stopDpsChartAnimation();
+    drawDpsChartFrame();
+    return;
+  }
+
+  startDpsChartAnimation();
+}
+
+function normalizeDpsSamples(samples) {
+  return samples
+    .map(sample => ({
+      atMs: Date.parse(sample.at),
+      dps: Math.max(0, sample.dps || 0)
+    }))
+    .filter(sample => Number.isFinite(sample.atMs))
+    .sort((left, right) => left.atMs - right.atMs);
+}
+
+function startDpsChartAnimation() {
+  if (dpsChartState.frameId == null) {
+    dpsChartState.frameId = window.requestAnimationFrame(animateDpsChart);
+  }
+}
+
+function stopDpsChartAnimation() {
+  if (dpsChartState.frameId != null) {
+    window.cancelAnimationFrame(dpsChartState.frameId);
+    dpsChartState.frameId = null;
+  }
+}
+
+function animateDpsChart() {
+  drawDpsChartFrame();
+  dpsChartState.frameId = dpsChartState.samples.length
+    ? window.requestAnimationFrame(animateDpsChart)
+    : null;
+}
+
+function drawDpsChartFrame() {
+  const samples = dpsChartState.samples;
+
   const rect = dpsChart.getBoundingClientRect();
   const width = Math.max(320, Math.floor(rect.width || dpsChart.clientWidth || 900));
   const height = Math.max(140, Math.floor(rect.height || 180));
   const scale = window.devicePixelRatio || 1;
-  dpsChart.width = Math.floor(width * scale);
-  dpsChart.height = Math.floor(height * scale);
+  const canvasWidth = Math.floor(width * scale);
+  const canvasHeight = Math.floor(height * scale);
+  if (dpsChart.width !== canvasWidth || dpsChart.height !== canvasHeight) {
+    dpsChart.width = canvasWidth;
+    dpsChart.height = canvasHeight;
+  }
+
   const ctx = dpsChart.getContext("2d");
   ctx.setTransform(scale, 0, 0, scale, 0, 0);
   ctx.clearRect(0, 0, width, height);
@@ -371,23 +442,34 @@ function renderDpsChart() {
     return;
   }
 
-  const values = samples.map(sample => Math.max(0, sample.dps || 0));
+  const desiredNowMs = getDesiredDpsNowMs();
+  dpsChartState.displayNowMs = smoothDpsNow(dpsChartState.displayNowMs, desiredNowMs);
+  const viewportEndMs = dpsChartState.displayNowMs;
+  const viewportStartMs = viewportEndMs - 60000;
+  const visibleSamples = samples.filter(sample => sample.atMs >= viewportStartMs - 1000 && sample.atMs <= viewportEndMs + 1000);
+  const values = visibleSamples.map(sample => sample.dps);
   const maxValue = Math.max(10, ...values);
   const chartPadding = { top: 12, right: 10, bottom: 18, left: 34 };
   const chartWidth = width - chartPadding.left - chartPadding.right;
   const chartHeight = height - chartPadding.top - chartPadding.bottom;
+  const points = visibleSamples.map(sample => ({
+    x: chartPadding.left + ((sample.atMs - viewportStartMs) / 60000) * chartWidth,
+    y: chartPadding.top + chartHeight - (sample.dps / maxValue) * chartHeight
+  }));
+
+  if (points.length === 0) {
+    return;
+  }
 
   const chartTheme = getChartTheme();
   ctx.strokeStyle = chartTheme.line;
   ctx.lineWidth = 2;
   ctx.beginPath();
-  values.forEach((value, index) => {
-    const x = chartPadding.left + (index / Math.max(1, values.length - 1)) * chartWidth;
-    const y = chartPadding.top + chartHeight - (value / maxValue) * chartHeight;
+  points.forEach((point, index) => {
     if (index === 0) {
-      ctx.moveTo(x, y);
+      ctx.moveTo(point.x, point.y);
     } else {
-      ctx.lineTo(x, y);
+      ctx.lineTo(point.x, point.y);
     }
   });
   ctx.stroke();
@@ -395,8 +477,16 @@ function renderDpsChart() {
   const gradient = ctx.createLinearGradient(0, chartPadding.top, 0, height - chartPadding.bottom);
   gradient.addColorStop(0, chartTheme.fillStart);
   gradient.addColorStop(1, chartTheme.fillEnd);
-  ctx.lineTo(width - chartPadding.right, height - chartPadding.bottom);
-  ctx.lineTo(chartPadding.left, height - chartPadding.bottom);
+  ctx.beginPath();
+  points.forEach((point, index) => {
+    if (index === 0) {
+      ctx.moveTo(point.x, point.y);
+    } else {
+      ctx.lineTo(point.x, point.y);
+    }
+  });
+  ctx.lineTo(points[points.length - 1].x, height - chartPadding.bottom);
+  ctx.lineTo(points[0].x, height - chartPadding.bottom);
   ctx.closePath();
   ctx.fillStyle = gradient;
   ctx.fill();
@@ -408,6 +498,28 @@ function renderDpsChart() {
   ctx.fillText("60s", chartPadding.left, height - 5);
   ctx.textAlign = "right";
   ctx.fillText("now", width - chartPadding.right, height - 5);
+}
+
+function getDesiredDpsNowMs() {
+  if (!dpsChartState.latestSampleMs) {
+    return Date.now();
+  }
+
+  const elapsedSinceLatestSample = Math.max(0, performance.now() - (dpsChartState.latestSampleFrameAt || performance.now()));
+  return dpsChartState.latestSampleMs + elapsedSinceLatestSample;
+}
+
+function smoothDpsNow(currentMs, desiredMs) {
+  if (currentMs == null || Math.abs(desiredMs - currentMs) > 5000) {
+    return desiredMs;
+  }
+
+  const delta = desiredMs - currentMs;
+  if (Math.abs(delta) < 1) {
+    return desiredMs;
+  }
+
+  return currentMs + delta * 0.18;
 }
 
 function drawChartGrid(ctx, width, height) {
