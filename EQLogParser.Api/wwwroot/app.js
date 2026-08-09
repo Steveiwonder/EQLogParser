@@ -1,5 +1,6 @@
 const connectionState = document.getElementById("connectionState");
-const updatedAt = document.getElementById("updatedAt");
+const connectionMeta = document.getElementById("connectionMeta");
+const shownSummary = document.getElementById("shownSummary");
 const castName = document.getElementById("castName");
 const castState = document.getElementById("castState");
 const playersContainer = document.getElementById("players");
@@ -12,10 +13,61 @@ const startupMessage = document.getElementById("startupMessage");
 const startupPercent = document.getElementById("startupPercent");
 const startupFill = document.getElementById("startupFill");
 const startupDetail = document.getElementById("startupDetail");
+const playerSelector = document.getElementById("playerSelector");
+const petSelector = document.getElementById("petSelector");
+const playerSelectorValue = document.getElementById("playerSelectorValue");
+const petSelectorValue = document.getElementById("petSelectorValue");
+const clearPlayerSelection = document.getElementById("clearPlayerSelection");
+const clearPetSelection = document.getElementById("clearPetSelection");
+const playerCaret = document.getElementById("playerCaret");
+const petCaret = document.getElementById("petCaret");
+const focusToggle = document.getElementById("focusToggle");
+const focusLabel = document.getElementById("focusLabel");
+const focusHint = document.getElementById("focusHint");
+const popoverOverlay = document.getElementById("popoverOverlay");
+const entityPopover = document.getElementById("entityPopover");
+const entitySearch = document.getElementById("entitySearch");
+const entityChoices = document.getElementById("entityChoices");
+
+const storageKeys = {
+  player: "eqlogparser.myPlayerName",
+  pet: "eqlogparser.myPetName",
+  focus: "eqlogparser.focus"
+};
+
+const state = {
+  players: [],
+  myPlayerName: localStorage.getItem(storageKeys.player) || "",
+  myPetName: localStorage.getItem(storageKeys.pet) || "",
+  focus: localStorage.getItem(storageKeys.focus) !== "false",
+  openSelector: null,
+  query: "",
+  lastStatusAt: null
+};
+
+playerSelector.addEventListener("click", () => openSelector("player", playerSelector));
+petSelector.addEventListener("click", () => openSelector("pet", petSelector));
+clearPlayerSelection.addEventListener("click", event => clearSelection(event, "player"));
+clearPetSelection.addEventListener("click", event => clearSelection(event, "pet"));
+popoverOverlay.addEventListener("click", closeSelector);
+focusToggle.addEventListener("click", toggleFocus);
+entitySearch.addEventListener("input", event => {
+  state.query = event.target.value;
+  renderChoices();
+});
+entitySearch.addEventListener("keydown", event => {
+  if (event.key === "Enter" && state.query.trim()) {
+    assignSelection(state.query.trim());
+  }
+
+  if (event.key === "Escape") {
+    closeSelector();
+  }
+});
 
 function setConnectionState(text, className) {
-  connectionState.textContent = text;
-  connectionState.className = `state ${className}`;
+  connectionState.className = `live-pill ${className}`;
+  connectionMeta.textContent = text;
 }
 
 function formatTime(seconds) {
@@ -24,8 +76,7 @@ function formatTime(seconds) {
   const minutes = Math.floor(value / 60);
   const remainingSeconds = value % 60;
   if (hours > 0) {
-    const remainingMinutes = minutes % 60;
-    return `${hours}:${remainingMinutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
+    return `${hours}:${(minutes % 60).toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
   }
 
   return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
@@ -33,17 +84,16 @@ function formatTime(seconds) {
 
 function renderStatus(status) {
   if (!status) {
-    updatedAt.textContent = "Waiting for parser updates";
+    state.players = [];
+    state.lastStatusAt = null;
     castName.textContent = "Idle";
     castState.textContent = "";
-    startupPanel.classList.add("hidden");
-    updateMetrics([]);
-    playersContainer.innerHTML = `<div class="empty">No active buffs</div>`;
+    renderStartupScan(null);
+    renderDashboard();
     return;
   }
 
-  const timestamp = new Date(status.updatedAt);
-  updatedAt.textContent = `Updated ${timestamp.toLocaleTimeString()}`;
+  state.lastStatusAt = new Date(status.updatedAt);
   renderStartupScan(status.startupScan);
 
   const currentCast = status.currentCast || {};
@@ -56,22 +106,182 @@ function renderStatus(status) {
         ? "Last cast did not take hold"
         : "";
 
-  const players = status.players || [];
-  updateMetrics(players);
-  if (players.length === 0) {
-    playersContainer.innerHTML = `<div class="empty">No active buffs</div>`;
+  state.players = status.players || [];
+  renderDashboard();
+}
+
+function renderDashboard() {
+  renderSelectors();
+  renderChoices();
+
+  const visiblePlayers = getVisiblePlayers();
+  updateMetrics(visiblePlayers);
+  updateHeaderSummary(visiblePlayers.length);
+
+  if (state.players.length === 0) {
+    playersContainer.innerHTML = `<div class="empty-state"><strong>No tracked entities</strong><span>Waiting for buffs, debuffs, or startup scan results.</span></div>`;
     return;
   }
 
-  playersContainer.replaceChildren(...players.map(renderPlayer));
+  if (visiblePlayers.length === 0) {
+    playersContainer.innerHTML = `<div class="empty-state"><strong>Nothing matches your focus</strong><span>Clear or change My Player / My Pet to see tracked entities.</span></div>`;
+    return;
+  }
+
+  playersContainer.replaceChildren(...visiblePlayers.map(renderPlayer));
 }
 
-function updateMetrics(players) {
-  const buffs = players.flatMap(player => player.buffs || []);
-  playerCount.textContent = players.length.toString();
-  activeCount.textContent = buffs.filter(buff => !buff.isExpired).length.toString();
-  debuffCount.textContent = buffs.filter(buff => buff.isDetrimental && !buff.isExpired).length.toString();
-  expiredCount.textContent = buffs.filter(buff => buff.isExpired).length.toString();
+function renderSelectors() {
+  updateSelector(playerSelector, playerSelectorValue, clearPlayerSelection, playerCaret, state.myPlayerName);
+  updateSelector(petSelector, petSelectorValue, clearPetSelection, petCaret, state.myPetName);
+
+  const hasSelection = Boolean(state.myPlayerName || state.myPetName);
+  focusToggle.disabled = !hasSelection;
+  focusToggle.classList.toggle("active", hasSelection && state.focus);
+  focusLabel.textContent = hasSelection && state.focus ? "FOCUS" : "SHOW ALL";
+
+  focusHint.textContent = hasSelection
+    ? state.focus
+      ? "showing your player + pet only"
+      : "showing every detected entity"
+    : "set a player or pet to enable focus";
+}
+
+function updateSelector(selector, valueElement, clearElement, caretElement, value) {
+  const isSet = Boolean(value);
+  selector.classList.toggle("selected", isSet);
+  valueElement.textContent = isSet ? value : "Select or type...";
+  valueElement.classList.toggle("empty-value", !isSet);
+  clearElement.classList.toggle("hidden", !isSet);
+  caretElement.classList.toggle("hidden", isSet);
+}
+
+function openSelector(type, anchor) {
+  state.openSelector = type;
+  state.query = "";
+  entitySearch.value = "";
+  entityPopover.classList.remove("hidden");
+  popoverOverlay.classList.remove("hidden");
+  positionPopover(anchor);
+  renderChoices();
+  window.requestAnimationFrame(() => entitySearch.focus());
+}
+
+function positionPopover(anchor) {
+  const rect = anchor.getBoundingClientRect();
+  entityPopover.style.left = `${Math.max(10, rect.left)}px`;
+  entityPopover.style.top = `${rect.bottom + 6}px`;
+}
+
+function closeSelector() {
+  state.openSelector = null;
+  entityPopover.classList.add("hidden");
+  popoverOverlay.classList.add("hidden");
+}
+
+function clearSelection(event, type) {
+  event.stopPropagation();
+  if (type === "player") {
+    state.myPlayerName = "";
+    localStorage.removeItem(storageKeys.player);
+  } else {
+    state.myPetName = "";
+    localStorage.removeItem(storageKeys.pet);
+  }
+
+  renderDashboard();
+}
+
+function assignSelection(name) {
+  if (state.openSelector === "player") {
+    state.myPlayerName = name;
+    localStorage.setItem(storageKeys.player, name);
+  }
+
+  if (state.openSelector === "pet") {
+    state.myPetName = name;
+    localStorage.setItem(storageKeys.pet, name);
+  }
+
+  state.focus = true;
+  localStorage.setItem(storageKeys.focus, "true");
+  closeSelector();
+  renderDashboard();
+}
+
+function toggleFocus() {
+  if (!state.myPlayerName && !state.myPetName) {
+    return;
+  }
+
+  state.focus = !state.focus;
+  localStorage.setItem(storageKeys.focus, state.focus ? "true" : "false");
+  renderDashboard();
+}
+
+function renderChoices() {
+  if (!state.openSelector || entityPopover.classList.contains("hidden")) {
+    return;
+  }
+
+  const query = normalize(state.query);
+  const choices = state.players
+    .filter(player => !query || normalize(formatPlayerName(player.name)).includes(query) || normalize(player.name).includes(query))
+    .sort((left, right) => formatPlayerName(left.name).localeCompare(formatPlayerName(right.name)));
+
+  if (choices.length === 0) {
+    entityChoices.innerHTML = `<div class="choice-empty">No detected entities match</div>`;
+    return;
+  }
+
+  entityChoices.replaceChildren(...choices.map(player => {
+    const row = document.createElement("button");
+    row.className = "choice-row";
+    row.type = "button";
+    row.innerHTML = `
+      <span class="type-badge ${getEntityType(player.name)}">${escapeHtml(getEntityTypeLabel(player.name))}</span>
+      <span class="choice-name">${escapeHtml(formatPlayerName(player.name))}</span>
+      <span class="choice-count">${(player.buffs || []).length} eff</span>
+    `;
+    row.addEventListener("click", () => assignSelection(formatPlayerName(player.name)));
+    return row;
+  }));
+}
+
+function getVisiblePlayers() {
+  const decorated = state.players.map(player => ({
+    player,
+    role: getRole(player.name)
+  }));
+
+  const hasSelection = Boolean(state.myPlayerName || state.myPetName);
+  const visible = hasSelection && state.focus
+    ? decorated.filter(item => item.role)
+    : decorated;
+
+  return visible.sort(comparePlayers);
+}
+
+function getRole(name) {
+  if (state.myPlayerName && namesMatch(name, state.myPlayerName)) {
+    return "you";
+  }
+
+  if (state.myPetName && namesMatch(name, state.myPetName)) {
+    return "pet";
+  }
+
+  return "";
+}
+
+function comparePlayers(left, right) {
+  const rank = item => item.role === "you" ? 0 : item.role === "pet" ? 1 : 2;
+  const rankDiff = rank(left) - rank(right);
+  if (rankDiff !== 0) {
+    return rankDiff;
+  }
+
+  return formatPlayerName(left.player.name).localeCompare(formatPlayerName(right.player.name));
 }
 
 function renderStartupScan(startupScan) {
@@ -90,66 +300,87 @@ function renderStartupScan(startupScan) {
     : "";
 }
 
-function renderPlayer(player) {
-  const article = document.createElement("article");
-  article.className = "player";
+function updateMetrics(visiblePlayers) {
+  const buffs = visiblePlayers.flatMap(item => item.player.buffs || []);
+  playerCount.textContent = visiblePlayers.length.toString();
+  activeCount.textContent = buffs.filter(buff => !buff.isExpired).length.toString();
+  debuffCount.textContent = buffs.filter(buff => buff.isDetrimental && !buff.isExpired).length.toString();
+  expiredCount.textContent = buffs.filter(buff => buff.isExpired).length.toString();
+}
 
+function updateHeaderSummary(visibleCount) {
+  const total = state.players.length;
+  const ageSeconds = state.lastStatusAt ? Math.max(0, (Date.now() - state.lastStatusAt.getTime()) / 1000) : null;
+  connectionMeta.textContent = total
+    ? `${total} entities / recv ${ageSeconds == null ? "--" : ageSeconds.toFixed(1)}s`
+    : "Waiting";
+
+  shownSummary.textContent = state.focus && (state.myPlayerName || state.myPetName)
+    ? `focus / ${visibleCount} of ${total}`
+    : `${total} entities`;
+}
+
+function renderPlayer(item) {
+  const player = item.player;
   const buffs = [...(player.buffs || [])].sort(compareBuffs);
-  const activeBuffs = buffs.filter(buff => !buff.isExpired).length;
-  const debuffs = buffs.filter(buff => buff.isDetrimental && !buff.isExpired).length;
+  const activeBuffs = buffs.filter(buff => !buff.isExpired);
+  const debuffs = activeBuffs.filter(buff => buff.isDetrimental);
+  const expired = buffs.filter(buff => buff.isExpired);
+  const article = document.createElement("article");
+  article.className = [
+    "player-card",
+    item.role === "you" ? "my-player" : "",
+    item.role === "pet" ? "my-pet" : ""
+  ].filter(Boolean).join(" ");
+
   const header = document.createElement("div");
   header.className = "player-header";
   header.innerHTML = `
-    <div>
+    <div class="player-title">
+      <span class="type-badge ${getEntityType(player.name, item.role)}">${escapeHtml(getEntityTypeLabel(player.name, item.role))}</span>
       <span class="player-name">${escapeHtml(formatPlayerName(player.name))}</span>
-      <span class="player-subtitle">${activeBuffs} active${debuffs ? `, ${debuffs} debuff${debuffs === 1 ? "" : "s"}` : ""}</span>
+      ${item.role ? `<span class="role-badge ${item.role}">${item.role === "you" ? "YOU" : "PET"}</span>` : ""}
     </div>
-    <span class="buff-count">${buffs.length}</span>
+    <div class="effect-counts">
+      ${debuffs.length ? `<span class="debuff-count">${debuffs.length} debuff${debuffs.length === 1 ? "" : "s"}</span>` : ""}
+      <span>${activeBuffs.length - debuffs.length} buff${activeBuffs.length - debuffs.length === 1 ? "" : "s"}${expired.length ? ` / ${expired.length} exp` : ""}</span>
+    </div>
   `;
   article.appendChild(header);
 
-  const buffList = document.createElement("div");
-  buffList.className = "buffs";
-  buffList.append(...buffs.map(buff => renderBuff(player, buff)));
-  article.appendChild(buffList);
+  const list = document.createElement("div");
+  list.className = "effect-list";
+  if (buffs.length === 0) {
+    list.innerHTML = `<div class="no-effects">no active effects</div>`;
+  } else {
+    list.append(...buffs.map(buff => renderBuff(player, buff)));
+  }
 
+  article.appendChild(list);
   return article;
 }
 
 function renderBuff(player, buff) {
   const percent = Math.max(0, Math.min(100, buff.percent || 0));
+  const isLow = !buff.isExpired && !buff.isDetrimental && percent < 25;
   const row = document.createElement("div");
   row.className = [
-    "buff",
+    "effect-row",
     buff.isExpired ? "expired" : "",
-    buff.isDetrimental ? "detrimental" : ""
+    buff.isDetrimental ? "debuff" : "",
+    isLow ? "low" : ""
   ].filter(Boolean).join(" ");
 
-  const meterClass = buff.isExpired
-    ? "expired"
-    : buff.isDetrimental
-    ? "detrimental"
-    : percent <= 20
-      ? "low"
-      : percent <= 45
-        ? "medium"
-        : "";
-  const typeLabel = buff.isDetrimental ? "Debuff" : "Buff";
+  const tag = buff.isExpired ? "RECAST" : buff.isDetrimental ? "DEBUFF" : isLow ? "LOW" : "";
   row.innerHTML = `
-    <div class="buff-main">
-      <div class="buff-name">${escapeHtml(buff.name || "Unknown")}</div>
-      <div class="buff-meta">
-        <span class="buff-type">${typeLabel}</span>
-        <span>${buff.isExpired ? "Expired" : `${percent}%`}</span>
-      </div>
+    <div class="effect-name">
+      <span>${escapeHtml(buff.name || "Unknown")}</span>
+      ${tag ? `<strong>${tag}</strong>` : ""}
     </div>
-    <div class="buff-actions">
-      <span class="buff-time">${buff.isExpired ? "Expired" : formatTime(buff.timeLeftSeconds)}</span>
-      <button class="remove-buff" type="button" aria-label="Remove ${escapeHtml(buff.name || "buff")}" title="Remove">x</button>
-    </div>
-    <div class="meter"><div class="meter-fill ${meterClass}" style="width: ${buff.isExpired ? 0 : percent}%"></div></div>
+    <span class="effect-time">${buff.isExpired ? "EXPIRED" : formatTime(buff.timeLeftSeconds)}</span>
+    <button class="remove-buff" type="button" aria-label="Remove ${escapeHtml(buff.name || "buff")}" title="Remove">x</button>
+    <div class="effect-bar"><div style="width: ${buff.isExpired ? 100 : percent}%"></div></div>
   `;
-
   row.querySelector(".remove-buff").addEventListener("click", () => dismissBuff(player, buff));
   return row;
 }
@@ -159,11 +390,19 @@ function compareBuffs(left, right) {
     return left.isExpired ? 1 : -1;
   }
 
-  if (left.isDetrimental !== right.isDetrimental) {
-    return left.isDetrimental ? -1 : 1;
-  }
-
   return (left.timeLeftSeconds || 0) - (right.timeLeftSeconds || 0);
+}
+
+async function dismissBuff(player, buff) {
+  await fetch("/api/status/dismiss-buff", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      playerName: player.name,
+      buffName: buff.name,
+      landed: buff.landed
+    })
+  });
 }
 
 function formatPlayerName(name) {
@@ -178,16 +417,47 @@ function formatPlayerName(name) {
   return name || "Unknown";
 }
 
-async function dismissBuff(player, buff) {
-  await fetch("/api/status/dismiss-buff", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      playerName: player.name,
-      buffName: buff.name,
-      landed: buff.landed
-    })
-  });
+function namesMatch(actualName, selectedName) {
+  return normalize(actualName) === normalize(selectedName)
+    || normalize(formatPlayerName(actualName)) === normalize(selectedName);
+}
+
+function normalize(name) {
+  return String(name || "").trim().toLocaleLowerCase();
+}
+
+function getEntityType(name, role = "") {
+  if (role === "you" || name === "__YOU__") {
+    return "type-player";
+  }
+
+  if (role === "pet" || name === "__PET__") {
+    return "type-pet";
+  }
+
+  const normalized = normalize(name);
+  if (normalized.startsWith("a ") || normalized.startsWith("an ") || /^[a-z]/.test(String(name || ""))) {
+    return "type-mob";
+  }
+
+  return "type-entity";
+}
+
+function getEntityTypeLabel(name, role = "") {
+  const type = getEntityType(name, role);
+  if (type === "type-player") {
+    return "PLAYER";
+  }
+
+  if (type === "type-pet") {
+    return "PET";
+  }
+
+  if (type === "type-mob") {
+    return "MOB";
+  }
+
+  return "ENTITY";
 }
 
 function escapeHtml(value) {

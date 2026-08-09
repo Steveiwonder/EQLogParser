@@ -4,21 +4,68 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>EQ Log Parser</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <main class="shell">
-    <header class="topbar">
-      <div class="identity">
-        <div class="app-mark">EQ</div>
-        <div>
-          <h1>EQ Log Parser</h1>
-          <p id="updatedAt">Waiting for parser updates</p>
-        </div>
+  <header class="topbar">
+    <div class="brand-row">
+      <div class="wordmark">
+        <span>EQ PARSE</span>
+        <small>buff / debuff tracker</small>
       </div>
-      <div id="connectionState" class="state state-waiting">Connecting</div>
-    </header>
+      <div id="connectionState" class="live-pill state-waiting">
+        <span class="live-dot"></span>
+        <strong>LIVE</strong>
+        <span id="connectionMeta">Waiting</span>
+      </div>
+    </div>
+    <div id="shownSummary" class="shown-summary">0 entities</div>
+  </header>
 
+  <section class="toolbar">
+    <div class="selector-wrap">
+      <button id="playerSelector" class="entity-selector player-selector" type="button">
+        <span class="selector-copy">
+          <span class="selector-label">MY PLAYER</span>
+          <span id="playerSelectorValue" class="selector-value empty-value">Select or type...</span>
+        </span>
+        <span id="clearPlayerSelection" class="selector-clear hidden" role="button" aria-label="Clear player">x</span>
+        <span id="playerCaret" class="selector-caret">v</span>
+      </button>
+    </div>
+
+    <div class="selector-wrap">
+      <button id="petSelector" class="entity-selector pet-selector" type="button">
+        <span class="selector-copy">
+          <span class="selector-label">MY PET</span>
+          <span id="petSelectorValue" class="selector-value empty-value">Select or type...</span>
+        </span>
+        <span id="clearPetSelection" class="selector-clear hidden" role="button" aria-label="Clear pet">x</span>
+        <span id="petCaret" class="selector-caret">v</span>
+      </button>
+    </div>
+
+    <div class="toolbar-divider"></div>
+
+    <button id="focusToggle" class="focus-toggle" type="button" disabled>
+      <span class="focus-dot"></span>
+      <span id="focusLabel">SHOW ALL</span>
+    </button>
+
+    <span id="focusHint" class="focus-hint">set a player or pet to enable focus</span>
+  </section>
+
+  <div id="popoverOverlay" class="popover-overlay hidden"></div>
+  <div id="entityPopover" class="entity-popover hidden">
+    <input id="entitySearch" type="text" autocomplete="off" placeholder="Type a name or pick below...">
+    <div id="entityChoices" class="entity-choices"></div>
+    <div class="popover-footer">Enter - set typed name / Esc - close</div>
+  </div>
+
+  <main class="content-shell">
     <section class="overview">
       <div class="cast-panel">
         <div class="panel-label">Current Cast</div>
@@ -27,7 +74,7 @@
       </div>
       <div class="metrics">
         <div class="metric">
-          <span class="metric-label">Players</span>
+          <span class="metric-label">Entities</span>
           <strong id="playerCount">0</strong>
         </div>
         <div class="metric">
