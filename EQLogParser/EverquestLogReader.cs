@@ -36,7 +36,6 @@ namespace EQLogParser
         }
         private readonly FileStream _stream;
         private readonly StreamReader _reader;
-        private bool _firstRead = true;
         public EverquestLogReader(
             LogFile logFile,
             IEnumerable<ILogProcessor> logProcessors,
@@ -48,12 +47,13 @@ namespace EQLogParser
             _statusPublisher = statusPublisher;
             _stream = OpenLogFile(logFile.Path);
             _reader = new StreamReader(_stream);
-            _firstRead = false;
         }
 
         private FileStream OpenLogFile(string path)
         {
-            return File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            stream.Seek(0, SeekOrigin.End);
+            return stream;
         }
 
         public async Task BeginAsync(CancellationToken cancellationToken)
@@ -62,14 +62,6 @@ namespace EQLogParser
             while (!cancellationToken.IsCancellationRequested)
             {
                 string line = _reader.ReadLine();
-                if (_firstRead)
-                {
-                    if (string.IsNullOrEmpty(line))
-                    {
-                        _firstRead = false;
-                    }
-                    continue;
-                }
 
                 if (!string.IsNullOrEmpty(line))
                 {
