@@ -56,7 +56,6 @@ namespace EQLogParser
             serviceCollection.AddSingleton<ILogProcessor, YourSpellCastFizzledLogProcessor>();
             serviceCollection.AddSingleton<ILogProcessor, YourSpellCastWasInterruptedLogProcessor>();
             serviceCollection.AddSingleton<ILogProcessor, YouLoseBuffLogProcessor>();
-            serviceCollection.AddSingleton<ILogProcessor, OtherPlayerCastsBuffOnYouLogProcessor>();
             serviceCollection.AddSingleton<ILogProcessor, SpellCastDidNotTakeHoldLogProcessor>();
             serviceCollection.AddSingleton<IBuffManager, BuffManager>();
             serviceCollection.AddSingleton<CurrentSpellCast>();

@@ -8,6 +8,8 @@ namespace EQLogParser.Processors
         private readonly CurrentSpellCast _currentSpellCast;
         private readonly IBuffManager _buffManager;
         private readonly SpellCache _spellCache;
+        private SpellMessageMatch _match;
+
         public EverquestLogReader.LogType LogType => EverquestLogReader.LogType.SpellCastLanded;
 
         public SpellCastLandedLogProcessor(CurrentSpellCast currentSpellCast, IBuffManager buffManager, SpellCache spellCache)
@@ -19,27 +21,61 @@ namespace EQLogParser.Processors
 
         public bool IsMatch(LogLine line)
         {
-            if (!_currentSpellCast.CanMatchLandedMessage(line.When))
-            {
-                return false;
-            }
-
-            return _currentSpellCast.CastLandedMessages
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Any(castLandedMessage => line.Message.Contains(castLandedMessage, StringComparison.OrdinalIgnoreCase));
+            _match = GetCurrentCastMatch(line) ?? GetDirectMessageMatch(line);
+            return _match != null;
         }
 
         public void Process(LogLine line)
         {
-            Spell spell = _spellCache.GetSpellByName(_currentSpellCast.Name);
-            string playerName = GetTargetName(line.Message, spell);
-
-            if (spell.Duration != null && spell.Duration.Value.TotalMilliseconds > 0)
+            if (_match?.Spell?.Duration != null && _match.Spell.Duration.Value.TotalMilliseconds > 0)
             {
-                _buffManager.AddBuff(playerName, spell.ToBuff(line.When));
+                _buffManager.AddBuff(_match.TargetName, _match.Spell.ToBuff(line.When));
             }
 
-            _currentSpellCast.CastLanded(line.When);
+            if (_currentSpellCast.CanMatchLandedMessage(line.When))
+            {
+                _currentSpellCast.CastLanded(line.When);
+            }
+
+            _match = null;
+        }
+
+        private SpellMessageMatch GetCurrentCastMatch(LogLine line)
+        {
+            if (!_currentSpellCast.CanMatchLandedMessage(line.When) || string.IsNullOrWhiteSpace(_currentSpellCast.Name))
+            {
+                return null;
+            }
+
+            Spell spell = _spellCache.GetSpellByName(_currentSpellCast.Name);
+            if (!CurrentCastMessagesMatch(line.Message, spell))
+            {
+                return null;
+            }
+
+            return new SpellMessageMatch()
+            {
+                Spell = spell,
+                MatchType = IsSelfMessage(line.Message, spell) ? SpellMessageMatchType.You : SpellMessageMatchType.Target,
+                TargetName = GetTargetName(line.Message, spell)
+            };
+        }
+
+        private SpellMessageMatch GetDirectMessageMatch(LogLine line)
+        {
+            return _spellCache.GetSpellMessageMatches(line.Message)
+                .Where(x => x.MatchType != SpellMessageMatchType.Ended)
+                .Where(x => x.Spell.Duration != null && x.Spell.Duration.Value.TotalMilliseconds > 0)
+                .GroupBy(x => new { x.TargetName, x.Spell.Name })
+                .Select(x => x.First())
+                .FirstOrDefault();
+        }
+
+        private static bool CurrentCastMessagesMatch(string message, Spell spell)
+        {
+            return IsSelfMessage(message, spell)
+                || (!string.IsNullOrWhiteSpace(spell.MessageTarget)
+                    && message.Contains(spell.MessageTarget, StringComparison.OrdinalIgnoreCase));
         }
 
         private static string GetTargetName(string message, Spell spell)
