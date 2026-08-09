@@ -21,7 +21,7 @@ namespace EQLogParser
             double ticks = spell.DurationTicks.Value;
             if (_playerLevelState.Level != null && spell.DurationFormula == 10)
             {
-                ticks = Math.Min(ticks, _playerLevelState.Level.Value * 2);
+                ticks = Math.Min(ticks, (_playerLevelState.Level.Value * 3) + 10);
             }
 
             return TimeSpan.FromSeconds(ticks * 6);
