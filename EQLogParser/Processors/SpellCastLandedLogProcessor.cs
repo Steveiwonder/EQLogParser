@@ -8,15 +8,21 @@ namespace EQLogParser.Processors
         private readonly CurrentSpellCast _currentSpellCast;
         private readonly IBuffManager _buffManager;
         private readonly SpellCache _spellCache;
+        private readonly SpellDurationCalculator _spellDurationCalculator;
         private SpellMessageMatch _match;
 
         public EverquestLogReader.LogType LogType => EverquestLogReader.LogType.SpellCastLanded;
 
-        public SpellCastLandedLogProcessor(CurrentSpellCast currentSpellCast, IBuffManager buffManager, SpellCache spellCache)
+        public SpellCastLandedLogProcessor(
+            CurrentSpellCast currentSpellCast,
+            IBuffManager buffManager,
+            SpellCache spellCache,
+            SpellDurationCalculator spellDurationCalculator)
         {
             _currentSpellCast = currentSpellCast;
             _buffManager = buffManager;
             _spellCache = spellCache;
+            _spellDurationCalculator = spellDurationCalculator;
         }
 
         public bool IsMatch(LogLine line)
@@ -27,9 +33,10 @@ namespace EQLogParser.Processors
 
         public void Process(LogLine line)
         {
-            if (_match?.Spell?.Duration != null && _match.Spell.Duration.Value.TotalMilliseconds > 0)
+            TimeSpan? duration = _match?.Spell == null ? null : _spellDurationCalculator.GetDuration(_match.Spell);
+            if (duration != null && duration.Value.TotalMilliseconds > 0)
             {
-                _buffManager.AddBuff(_match.TargetName, _match.Spell.ToBuff(line.When));
+                _buffManager.AddBuff(_match.TargetName, _match.Spell.ToBuff(line.When, duration.Value));
             }
 
             if (_currentSpellCast.CanMatchLandedMessage(line.When))

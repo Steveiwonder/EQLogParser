@@ -11,6 +11,8 @@ namespace EQLogParser
         public TimeSpan? CastTime { get; set; }
         public int? ManaCost { get; set; }
         public TimeSpan? Duration { get; set; }
+        public double? DurationTicks { get; set; }
+        public int? DurationFormula { get; set; }
 
         public string MessageYou { get; set; }
         public string MessageTarget { get; set; }

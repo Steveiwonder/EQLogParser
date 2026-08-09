@@ -32,7 +32,8 @@ namespace EQLogParser
             YouLoseBuff,
             OtherPlayerCastsBuffOnYou,
             SpellCastDidNotTakeHold,
-            Camping
+            Camping,
+            PlayerLevel
         }
         private readonly FileStream _stream;
         private readonly StreamReader _reader;

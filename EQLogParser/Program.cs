@@ -23,6 +23,7 @@ namespace EQLogParser
     public class AppSettings
     {
         public RemoteStatusOptions RemoteStatus { get; set; } = new RemoteStatusOptions();
+        public ParserOptions Parser { get; set; } = new ParserOptions();
     }
 
     class Program
@@ -40,6 +41,7 @@ namespace EQLogParser
             string logFilePath = args[0];
             string spellFilePath = args.Length == 2 ? args[1] : DefaultLegendsSpellFilePath;
             AppSettings appSettings = LoadAppSettings();
+            appSettings.Parser.PlayerLevel ??= new PlayerLevelDetector().DetectLatestLevel(logFilePath);
 
             IServiceCollection serviceCollection = new ServiceCollection();
             serviceCollection.AddSingleton<ILogger, ConsoleLogger>();
@@ -47,8 +49,10 @@ namespace EQLogParser
             serviceCollection.AddSingleton(new LogFile() { Path = logFilePath });
             serviceCollection.AddSingleton(new SpellFile() { Path = spellFilePath });
             serviceCollection.AddSingleton(appSettings.RemoteStatus);
+            serviceCollection.AddSingleton(appSettings.Parser);
             serviceCollection.AddSingleton(new HttpClient());
 
+            serviceCollection.AddSingleton<ILogProcessor, PlayerLevelLogProcessor>();
             serviceCollection.AddSingleton<ILogProcessor, NpcMissedYouLogProcessor>();
             serviceCollection.AddSingleton<ILogProcessor, SpellCastBeginLogProcessor>();
             serviceCollection.AddSingleton<ILogProcessor, PlayerTakesDamageLogProcessor>();
@@ -59,6 +63,8 @@ namespace EQLogParser
             serviceCollection.AddSingleton<ILogProcessor, SpellCastDidNotTakeHoldLogProcessor>();
             serviceCollection.AddSingleton<IBuffManager, BuffManager>();
             serviceCollection.AddSingleton<CurrentSpellCast>();
+            serviceCollection.AddSingleton<PlayerLevelState>();
+            serviceCollection.AddSingleton<SpellDurationCalculator>();
             serviceCollection.AddSingleton<ParserStatusFactory>();
             serviceCollection.AddSingleton<IStatusPublisher, RemoteStatusPublisher>();
             serviceCollection.AddSingleton(provider =>

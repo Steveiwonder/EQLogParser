@@ -53,6 +53,7 @@ namespace EQLogParser
         private const int MESSAGE_ENDED_INDEX = 8;
         private const int TARGET_TYPE_INDEX = 86;
 
+        private const int LEGENDS_DURATION_FORMULA_INDEX = 11;
         private const int LEGENDS_CAST_TIME_INDEX = 8;
         private const int LEGENDS_MANA_COST_INDEX = 14;
         private const int LEGENDS_DURATION_INDEX = 12;
@@ -67,13 +68,17 @@ namespace EQLogParser
             string castTime = parts[usesLegendsFormat ? LEGENDS_CAST_TIME_INDEX : CAST_TIME_INDEX];
             string manaCost = parts[usesLegendsFormat ? LEGENDS_MANA_COST_INDEX : MANA_COST_INDEX];
             string duration = parts[usesLegendsFormat ? LEGENDS_DURATION_INDEX : DURATION_INDEX];
+            string durationFormula = usesLegendsFormat ? parts[LEGENDS_DURATION_FORMULA_INDEX] : null;
             TargetTypes targetType = Enum.Parse<TargetTypes>(parts[TARGET_TYPE_INDEX]);
+            double? durationTicks = string.IsNullOrEmpty(duration) ? (double?)null : double.Parse(duration);
 
             return new Spell(parts)
             {
                 CastTime = string.IsNullOrEmpty(castTime) ? (TimeSpan?)null : TimeSpan.FromMilliseconds(double.Parse(castTime)),
                 ManaCost = string.IsNullOrEmpty(manaCost) ? (int?)null : int.Parse(manaCost),
-                Duration = string.IsNullOrEmpty(duration) ? (TimeSpan?)null : TimeSpan.FromSeconds(double.Parse(duration) * 6),
+                Duration = durationTicks == null ? (TimeSpan?)null : TimeSpan.FromSeconds(durationTicks.Value * 6),
+                DurationTicks = durationTicks,
+                DurationFormula = string.IsNullOrEmpty(durationFormula) ? (int?)null : int.Parse(durationFormula),
                 MessageEnded = usesExternalMessages ? messages.MessageEnded : parts[MESSAGE_ENDED_INDEX],
                 MessageYou = usesExternalMessages ? messages.MessageYou : parts[MESSAGE_YOU_INDEX],
                 MessageTarget = usesExternalMessages ? messages.MessageTarget : parts[MESSAGE_TARGET_INDEX],
