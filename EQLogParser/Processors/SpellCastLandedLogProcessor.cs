@@ -19,6 +19,11 @@ namespace EQLogParser.Processors
 
         public bool IsMatch(LogLine line)
         {
+            if (!_currentSpellCast.CanMatchLandedMessage(line.When))
+            {
+                return false;
+            }
+
             return _currentSpellCast.CastLandedMessages
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Any(castLandedMessage => line.Message.Contains(castLandedMessage, StringComparison.OrdinalIgnoreCase));
@@ -34,7 +39,7 @@ namespace EQLogParser.Processors
                 _buffManager.AddBuff(playerName, spell.ToBuff(line.When));
             }
 
-            _currentSpellCast.CastLanded();
+            _currentSpellCast.CastLanded(line.When);
         }
 
         private static string GetTargetName(string message, Spell spell)
