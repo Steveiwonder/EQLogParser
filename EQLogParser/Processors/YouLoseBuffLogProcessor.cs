@@ -30,7 +30,7 @@ namespace EQLogParser.Processors
 
         public void Process(LogLine line)
         {
-            _buffManager.RemoveBuffs("__YOU__", _spell.Select(x => x.Name).ToArray());
+            _buffManager.ExpireBuffs("__YOU__", _spell.Select(x => x.Name).ToArray());
             _spell = null;
         }
     }

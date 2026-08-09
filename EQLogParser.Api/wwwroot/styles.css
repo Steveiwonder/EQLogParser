@@ -129,10 +129,14 @@ p {
 
 .buff {
   display: grid;
-  grid-template-columns: minmax(110px, 1fr) 58px;
+  grid-template-columns: minmax(110px, 1fr) auto;
   gap: 10px;
   padding: 10px 14px;
   border-bottom: 1px solid #262c25;
+}
+
+.buff.expired {
+  color: #9da79a;
 }
 
 .buff:last-child {
@@ -146,11 +150,36 @@ p {
   font-weight: 650;
 }
 
+.buff-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .buff-time {
+  min-width: 58px;
   color: #c2cabc;
-  text-align: right;
   font-variant-numeric: tabular-nums;
   font-size: 13px;
+  text-align: right;
+}
+
+.remove-buff {
+  width: 22px;
+  height: 22px;
+  border: 1px solid #465044;
+  border-radius: 4px;
+  background: #232a25;
+  color: #d7ddd2;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.remove-buff:hover {
+  border-color: #7b8876;
+  background: #2c352e;
 }
 
 .meter {
@@ -177,6 +206,10 @@ p {
 
 .meter-fill.detrimental {
   background: #dc6b5f;
+}
+
+.meter-fill.expired {
+  background: #687165;
 }
 
 .empty {

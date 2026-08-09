@@ -24,5 +24,10 @@ namespace EQLogParser
                 return (int) (vv);
             }
         }
+
+        public void Expire()
+        {
+            Expires = DateTime.Now.AddSeconds(-1);
+        }
     }
 }

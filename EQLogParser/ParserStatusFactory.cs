@@ -43,7 +43,8 @@ namespace EQLogParser
                                 DurationSeconds = buff.Duration.TotalSeconds,
                                 TimeLeftSeconds = Math.Max(0, buff.TimeLeft.TotalSeconds),
                                 Percent = Math.Clamp(buff.Percent, 0, 100),
-                                IsDetrimental = buff.IsDetrimental
+                                IsDetrimental = buff.IsDetrimental,
+                                IsExpired = buff.IsExpired
                             })
                             .ToArray()
                     })

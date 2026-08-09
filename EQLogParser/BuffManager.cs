@@ -38,6 +38,15 @@ namespace EQLogParser
             
         }
 
+        public void ExpireBuffs(string playerName, params string[] buffNames)
+        {
+            Player player = GetPlayer(playerName);
+            foreach (var s in buffNames)
+            {
+                player.ExpireBuff(s);
+            }
+        }
+
         public IEnumerable<Player> GetPlayers()
         {
             return Players.Values.Where(x => x.GetBuffs().Any());

@@ -29,10 +29,24 @@ app.MapPost("/api/status", async (
         status.UpdatedAt = DateTimeOffset.Now;
     }
 
-    statusStore.Set(status);
-    await hubContext.Clients.All.SendAsync("statusUpdated", status);
+    ParserStatusUpdate filteredStatus = statusStore.Set(status);
+    await hubContext.Clients.All.SendAsync("statusUpdated", filteredStatus);
 
     return Results.Accepted();
+});
+
+app.MapPost("/api/status/dismiss-buff", async (
+    DismissBuffRequest request,
+    StatusStore statusStore,
+    IHubContext<StatusHub> hubContext) =>
+{
+    ParserStatusUpdate? status = statusStore.Dismiss(request);
+    if (status != null)
+    {
+        await hubContext.Clients.All.SendAsync("statusUpdated", status);
+    }
+
+    return Results.NoContent();
 });
 
 app.MapHub<StatusHub>("/hubs/status");

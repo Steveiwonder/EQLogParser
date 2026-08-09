@@ -59,18 +59,20 @@ function renderPlayer(player) {
 
   const buffList = document.createElement("div");
   buffList.className = "buffs";
-  buffList.append(...buffs.map(renderBuff));
+  buffList.append(...buffs.map(buff => renderBuff(player, buff)));
   article.appendChild(buffList);
 
   return article;
 }
 
-function renderBuff(buff) {
+function renderBuff(player, buff) {
   const percent = Math.max(0, Math.min(100, buff.percent || 0));
   const row = document.createElement("div");
-  row.className = "buff";
+  row.className = buff.isExpired ? "buff expired" : "buff";
 
-  const meterClass = buff.isDetrimental
+  const meterClass = buff.isExpired
+    ? "expired"
+    : buff.isDetrimental
     ? "detrimental"
     : percent <= 20
       ? "low"
@@ -79,11 +81,27 @@ function renderBuff(buff) {
         : "";
   row.innerHTML = `
     <div class="buff-name">${escapeHtml(buff.name || "Unknown")}</div>
-    <div class="buff-time">${formatTime(buff.timeLeftSeconds)}</div>
-    <div class="meter"><div class="meter-fill ${meterClass}" style="width: ${percent}%"></div></div>
+    <div class="buff-actions">
+      <span class="buff-time">${buff.isExpired ? "Expired" : formatTime(buff.timeLeftSeconds)}</span>
+      <button class="remove-buff" type="button" title="Remove ${escapeHtml(buff.name || "buff")}">x</button>
+    </div>
+    <div class="meter"><div class="meter-fill ${meterClass}" style="width: ${buff.isExpired ? 0 : percent}%"></div></div>
   `;
 
+  row.querySelector(".remove-buff").addEventListener("click", () => dismissBuff(player, buff));
   return row;
+}
+
+async function dismissBuff(player, buff) {
+  await fetch("/api/status/dismiss-buff", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      playerName: player.name,
+      buffName: buff.name,
+      landed: buff.landed
+    })
+  });
 }
 
 function escapeHtml(value) {
