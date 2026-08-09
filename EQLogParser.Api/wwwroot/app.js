@@ -3,6 +3,10 @@ const updatedAt = document.getElementById("updatedAt");
 const castName = document.getElementById("castName");
 const castState = document.getElementById("castState");
 const playersContainer = document.getElementById("players");
+const playerCount = document.getElementById("playerCount");
+const activeCount = document.getElementById("activeCount");
+const debuffCount = document.getElementById("debuffCount");
+const expiredCount = document.getElementById("expiredCount");
 const startupPanel = document.getElementById("startupPanel");
 const startupMessage = document.getElementById("startupMessage");
 const startupPercent = document.getElementById("startupPercent");
@@ -16,8 +20,14 @@ function setConnectionState(text, className) {
 
 function formatTime(seconds) {
   const value = Math.max(0, Math.ceil(seconds || 0));
+  const hours = Math.floor(value / 3600);
   const minutes = Math.floor(value / 60);
   const remainingSeconds = value % 60;
+  if (hours > 0) {
+    const remainingMinutes = minutes % 60;
+    return `${hours}:${remainingMinutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
+  }
+
   return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 }
 
@@ -27,6 +37,7 @@ function renderStatus(status) {
     castName.textContent = "Idle";
     castState.textContent = "";
     startupPanel.classList.add("hidden");
+    updateMetrics([]);
     playersContainer.innerHTML = `<div class="empty">No active buffs</div>`;
     return;
   }
@@ -46,12 +57,21 @@ function renderStatus(status) {
         : "";
 
   const players = status.players || [];
+  updateMetrics(players);
   if (players.length === 0) {
     playersContainer.innerHTML = `<div class="empty">No active buffs</div>`;
     return;
   }
 
   playersContainer.replaceChildren(...players.map(renderPlayer));
+}
+
+function updateMetrics(players) {
+  const buffs = players.flatMap(player => player.buffs || []);
+  playerCount.textContent = players.length.toString();
+  activeCount.textContent = buffs.filter(buff => !buff.isExpired).length.toString();
+  debuffCount.textContent = buffs.filter(buff => buff.isDetrimental && !buff.isExpired).length.toString();
+  expiredCount.textContent = buffs.filter(buff => buff.isExpired).length.toString();
 }
 
 function renderStartupScan(startupScan) {
@@ -74,10 +94,18 @@ function renderPlayer(player) {
   const article = document.createElement("article");
   article.className = "player";
 
-  const buffs = player.buffs || [];
+  const buffs = [...(player.buffs || [])].sort(compareBuffs);
+  const activeBuffs = buffs.filter(buff => !buff.isExpired).length;
+  const debuffs = buffs.filter(buff => buff.isDetrimental && !buff.isExpired).length;
   const header = document.createElement("div");
   header.className = "player-header";
-  header.innerHTML = `<span>${escapeHtml(player.name || "Unknown")}</span><span class="buff-count">${buffs.length}</span>`;
+  header.innerHTML = `
+    <div>
+      <span class="player-name">${escapeHtml(formatPlayerName(player.name))}</span>
+      <span class="player-subtitle">${activeBuffs} active${debuffs ? `, ${debuffs} debuff${debuffs === 1 ? "" : "s"}` : ""}</span>
+    </div>
+    <span class="buff-count">${buffs.length}</span>
+  `;
   article.appendChild(header);
 
   const buffList = document.createElement("div");
@@ -91,7 +119,11 @@ function renderPlayer(player) {
 function renderBuff(player, buff) {
   const percent = Math.max(0, Math.min(100, buff.percent || 0));
   const row = document.createElement("div");
-  row.className = buff.isExpired ? "buff expired" : "buff";
+  row.className = [
+    "buff",
+    buff.isExpired ? "expired" : "",
+    buff.isDetrimental ? "detrimental" : ""
+  ].filter(Boolean).join(" ");
 
   const meterClass = buff.isExpired
     ? "expired"
@@ -102,17 +134,48 @@ function renderBuff(player, buff) {
       : percent <= 45
         ? "medium"
         : "";
+  const typeLabel = buff.isDetrimental ? "Debuff" : "Buff";
   row.innerHTML = `
-    <div class="buff-name">${escapeHtml(buff.name || "Unknown")}</div>
+    <div class="buff-main">
+      <div class="buff-name">${escapeHtml(buff.name || "Unknown")}</div>
+      <div class="buff-meta">
+        <span class="buff-type">${typeLabel}</span>
+        <span>${buff.isExpired ? "Expired" : `${percent}%`}</span>
+      </div>
+    </div>
     <div class="buff-actions">
       <span class="buff-time">${buff.isExpired ? "Expired" : formatTime(buff.timeLeftSeconds)}</span>
-      <button class="remove-buff" type="button" title="Remove ${escapeHtml(buff.name || "buff")}">x</button>
+      <button class="remove-buff" type="button" aria-label="Remove ${escapeHtml(buff.name || "buff")}" title="Remove">x</button>
     </div>
     <div class="meter"><div class="meter-fill ${meterClass}" style="width: ${buff.isExpired ? 0 : percent}%"></div></div>
   `;
 
   row.querySelector(".remove-buff").addEventListener("click", () => dismissBuff(player, buff));
   return row;
+}
+
+function compareBuffs(left, right) {
+  if (left.isExpired !== right.isExpired) {
+    return left.isExpired ? 1 : -1;
+  }
+
+  if (left.isDetrimental !== right.isDetrimental) {
+    return left.isDetrimental ? -1 : 1;
+  }
+
+  return (left.timeLeftSeconds || 0) - (right.timeLeftSeconds || 0);
+}
+
+function formatPlayerName(name) {
+  if (name === "__YOU__") {
+    return "You";
+  }
+
+  if (name === "__PET__") {
+    return "Pet";
+  }
+
+  return name || "Unknown";
 }
 
 async function dismissBuff(player, buff) {

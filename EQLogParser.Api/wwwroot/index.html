@@ -9,17 +9,40 @@
 <body>
   <main class="shell">
     <header class="topbar">
-      <div>
-        <h1>EQ Log Parser</h1>
-        <p id="updatedAt">Waiting for parser updates</p>
+      <div class="identity">
+        <div class="app-mark">EQ</div>
+        <div>
+          <h1>EQ Log Parser</h1>
+          <p id="updatedAt">Waiting for parser updates</p>
+        </div>
       </div>
       <div id="connectionState" class="state state-waiting">Connecting</div>
     </header>
 
-    <section class="cast-panel">
-      <div class="panel-label">Current Cast</div>
-      <div id="castName" class="cast-name">Idle</div>
-      <div id="castState" class="cast-state"></div>
+    <section class="overview">
+      <div class="cast-panel">
+        <div class="panel-label">Current Cast</div>
+        <div id="castName" class="cast-name">Idle</div>
+        <div id="castState" class="cast-state"></div>
+      </div>
+      <div class="metrics">
+        <div class="metric">
+          <span class="metric-label">Players</span>
+          <strong id="playerCount">0</strong>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Active</span>
+          <strong id="activeCount">0</strong>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Debuffs</span>
+          <strong id="debuffCount">0</strong>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Expired</span>
+          <strong id="expiredCount">0</strong>
+        </div>
+      </div>
     </section>
 
     <section id="startupPanel" class="startup-panel hidden">
