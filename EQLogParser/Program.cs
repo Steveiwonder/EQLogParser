@@ -55,6 +55,7 @@ namespace EQLogParser
             serviceCollection.AddSingleton<ILogProcessor, PlayerLevelLogProcessor>();
             serviceCollection.AddSingleton<ILogProcessor, NpcMissedYouLogProcessor>();
             serviceCollection.AddSingleton<ILogProcessor, SpellCastBeginLogProcessor>();
+            serviceCollection.AddSingleton<ILogProcessor, DamageDoneLogProcessor>();
             serviceCollection.AddSingleton<ILogProcessor, PlayerTakesDamageLogProcessor>();
             serviceCollection.AddSingleton<ILogProcessor, SpellCastLandedLogProcessor>();
             serviceCollection.AddSingleton<ILogProcessor, YourSpellCastFizzledLogProcessor>();
@@ -66,6 +67,7 @@ namespace EQLogParser
             serviceCollection.AddSingleton<CurrentSpellCast>();
             serviceCollection.AddSingleton<PlayerLevelState>();
             serviceCollection.AddSingleton<StartupScanState>();
+            serviceCollection.AddSingleton<DamageTracker>();
             serviceCollection.AddSingleton<SpellDurationCalculator>();
             serviceCollection.AddSingleton<ParserStatusFactory>();
             serviceCollection.AddSingleton<IStatusPublisher, RemoteStatusPublisher>();

@@ -9,6 +9,7 @@ namespace EQLogParser.Contracts
         public StartupScanStatus StartupScan { get; set; } = new StartupScanStatus();
         public CastStatus CurrentCast { get; set; } = new CastStatus();
         public IReadOnlyList<PlayerStatus> Players { get; set; } = Array.Empty<PlayerStatus>();
+        public IReadOnlyList<DamageActorStatus> DamageActors { get; set; } = Array.Empty<DamageActorStatus>();
     }
 
     public class StartupScanStatus
@@ -46,5 +47,19 @@ namespace EQLogParser.Contracts
         public int Percent { get; set; }
         public bool IsDetrimental { get; set; }
         public bool IsExpired { get; set; }
+    }
+
+    public class DamageActorStatus
+    {
+        public string Name { get; set; } = string.Empty;
+        public double CurrentDps { get; set; }
+        public int DamageLastMinute { get; set; }
+        public IReadOnlyList<DpsSampleStatus> Samples { get; set; } = Array.Empty<DpsSampleStatus>();
+    }
+
+    public class DpsSampleStatus
+    {
+        public DateTimeOffset At { get; set; }
+        public double Dps { get; set; }
     }
 }

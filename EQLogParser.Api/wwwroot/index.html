@@ -92,6 +92,21 @@
       </div>
     </section>
 
+    <section class="dps-panel">
+      <div class="dps-header">
+        <div>
+          <div class="panel-label">Player DPS</div>
+          <div id="dpsActor" class="dps-actor">You</div>
+        </div>
+        <div class="dps-stats">
+          <span><strong id="currentDps">0.0</strong> DPS</span>
+          <span><strong id="damageLastMinute">0</strong> last 60s</span>
+        </div>
+      </div>
+      <canvas id="dpsChart" width="900" height="180" aria-label="Live player DPS chart"></canvas>
+      <div id="dpsEmpty" class="dps-empty">Waiting for outgoing damage</div>
+    </section>
+
     <section id="startupPanel" class="startup-panel hidden">
       <div class="startup-row">
         <div>

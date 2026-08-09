@@ -8,6 +8,11 @@ const playerCount = document.getElementById("playerCount");
 const activeCount = document.getElementById("activeCount");
 const debuffCount = document.getElementById("debuffCount");
 const expiredCount = document.getElementById("expiredCount");
+const dpsActor = document.getElementById("dpsActor");
+const currentDps = document.getElementById("currentDps");
+const damageLastMinute = document.getElementById("damageLastMinute");
+const dpsChart = document.getElementById("dpsChart");
+const dpsEmpty = document.getElementById("dpsEmpty");
 const startupPanel = document.getElementById("startupPanel");
 const startupMessage = document.getElementById("startupMessage");
 const startupPercent = document.getElementById("startupPercent");
@@ -37,6 +42,7 @@ const storageKeys = {
 
 const state = {
   players: [],
+  damageActors: [],
   myPlayerName: localStorage.getItem(storageKeys.player) || "",
   myPetName: localStorage.getItem(storageKeys.pet) || "",
   focus: localStorage.getItem(storageKeys.focus) !== "false",
@@ -85,6 +91,7 @@ function formatTime(seconds) {
 function renderStatus(status) {
   if (!status) {
     state.players = [];
+    state.damageActors = [];
     state.lastStatusAt = null;
     castName.textContent = "Idle";
     castState.textContent = "";
@@ -107,6 +114,7 @@ function renderStatus(status) {
         : "";
 
   state.players = status.players || [];
+  state.damageActors = status.damageActors || [];
   renderDashboard();
 }
 
@@ -117,6 +125,7 @@ function renderDashboard() {
   const visiblePlayers = getVisiblePlayers();
   updateMetrics(visiblePlayers);
   updateHeaderSummary(visiblePlayers.length);
+  renderDpsChart();
 
   if (state.players.length === 0) {
     playersContainer.innerHTML = `<div class="empty-state"><strong>No tracked entities</strong><span>Waiting for buffs, debuffs, or startup scan results.</span></div>`;
@@ -318,6 +327,103 @@ function updateHeaderSummary(visibleCount) {
   shownSummary.textContent = state.focus && (state.myPlayerName || state.myPetName)
     ? `focus / ${visibleCount} of ${total}`
     : `${total} entities`;
+}
+
+function renderDpsChart() {
+  const actor = getSelectedDamageActor();
+  const samples = actor?.samples || [];
+  const displayName = actor ? formatPlayerName(actor.name) : state.myPlayerName || "You";
+  dpsActor.textContent = displayName;
+  currentDps.textContent = actor ? actor.currentDps.toFixed(1) : "0.0";
+  damageLastMinute.textContent = actor ? actor.damageLastMinute.toLocaleString() : "0";
+  dpsEmpty.classList.toggle("hidden", samples.length > 0 && samples.some(sample => sample.dps > 0));
+
+  const rect = dpsChart.getBoundingClientRect();
+  const width = Math.max(320, Math.floor(rect.width || dpsChart.clientWidth || 900));
+  const height = Math.max(140, Math.floor(rect.height || 180));
+  const scale = window.devicePixelRatio || 1;
+  dpsChart.width = Math.floor(width * scale);
+  dpsChart.height = Math.floor(height * scale);
+  const ctx = dpsChart.getContext("2d");
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  ctx.clearRect(0, 0, width, height);
+
+  drawChartGrid(ctx, width, height);
+  if (samples.length === 0) {
+    return;
+  }
+
+  const values = samples.map(sample => Math.max(0, sample.dps || 0));
+  const maxValue = Math.max(10, ...values);
+  const chartPadding = { top: 12, right: 10, bottom: 18, left: 34 };
+  const chartWidth = width - chartPadding.left - chartPadding.right;
+  const chartHeight = height - chartPadding.top - chartPadding.bottom;
+
+  ctx.strokeStyle = "#5aa8ff";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  values.forEach((value, index) => {
+    const x = chartPadding.left + (index / Math.max(1, values.length - 1)) * chartWidth;
+    const y = chartPadding.top + chartHeight - (value / maxValue) * chartHeight;
+    if (index === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  });
+  ctx.stroke();
+
+  const gradient = ctx.createLinearGradient(0, chartPadding.top, 0, height - chartPadding.bottom);
+  gradient.addColorStop(0, "rgba(90, 168, 255, 0.28)");
+  gradient.addColorStop(1, "rgba(90, 168, 255, 0)");
+  ctx.lineTo(width - chartPadding.right, height - chartPadding.bottom);
+  ctx.lineTo(chartPadding.left, height - chartPadding.bottom);
+  ctx.closePath();
+  ctx.fillStyle = gradient;
+  ctx.fill();
+
+  ctx.fillStyle = "#6b7684";
+  ctx.font = "10px 'IBM Plex Mono', monospace";
+  ctx.textAlign = "left";
+  ctx.fillText(`${Math.ceil(maxValue)} max`, 6, chartPadding.top + 4);
+  ctx.fillText("60s", chartPadding.left, height - 5);
+  ctx.textAlign = "right";
+  ctx.fillText("now", width - chartPadding.right, height - 5);
+}
+
+function drawChartGrid(ctx, width, height) {
+  const left = 34;
+  const right = 10;
+  const top = 12;
+  const bottom = 18;
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.06)";
+  ctx.lineWidth = 1;
+
+  for (let i = 0; i <= 4; i++) {
+    const y = top + ((height - top - bottom) / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(left, y);
+    ctx.lineTo(width - right, y);
+    ctx.stroke();
+  }
+
+  for (let i = 0; i <= 6; i++) {
+    const x = left + ((width - left - right) / 6) * i;
+    ctx.beginPath();
+    ctx.moveTo(x, top);
+    ctx.lineTo(x, height - bottom);
+    ctx.stroke();
+  }
+}
+
+function getSelectedDamageActor() {
+  const selectedName = state.myPlayerName || "You";
+  let actor = state.damageActors.find(item => namesMatch(item.name, selectedName));
+  if (!actor && !state.myPlayerName) {
+    actor = state.damageActors.find(item => item.name === "__YOU__");
+  }
+
+  return actor || null;
 }
 
 function renderPlayer(item) {

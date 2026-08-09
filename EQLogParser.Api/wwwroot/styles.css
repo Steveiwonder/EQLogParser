@@ -429,6 +429,7 @@ input {
 .cast-panel,
 .startup-panel,
 .metric,
+.dps-panel,
 .player-card {
   border: 1px solid var(--border);
   border-radius: 11px;
@@ -489,6 +490,70 @@ input {
 
 .startup-panel {
   margin-bottom: 12px;
+}
+
+.dps-panel {
+  position: relative;
+  margin-bottom: 12px;
+  padding: 12px 13px;
+}
+
+.dps-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.dps-actor {
+  margin-top: 4px;
+  color: #f2f5f8;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.dps-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  color: #6b7684;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+}
+
+.dps-stats span {
+  padding: 4px 7px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(14, 19, 25, 0.72);
+}
+
+.dps-stats strong {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+#dpsChart {
+  display: block;
+  width: 100%;
+  height: 180px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  background: #0e1319;
+}
+
+.dps-empty {
+  position: absolute;
+  right: 20px;
+  bottom: 24px;
+  color: var(--faint);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  pointer-events: none;
 }
 
 .startup-row {

@@ -61,7 +61,8 @@ namespace EQLogParser
             SpellCastDidNotTakeHold,
             Camping,
             PlayerLevel,
-            SpellWornOff
+            SpellWornOff,
+            DamageDone
         }
 
         public EverquestLogReader(

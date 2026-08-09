@@ -48,6 +48,7 @@ namespace EQLogParser.Api
             {
                 UpdatedAt = status.UpdatedAt,
                 StartupScan = status.StartupScan,
+                DamageActors = status.DamageActors,
                 CurrentCast = status.CurrentCast,
                 Players = status.Players
                     .Select(player => new PlayerStatus()
