@@ -16,6 +16,7 @@ namespace EQLogParser
     }
     public class EverquestLogReader
     {
+        private const int PublishIntervalTicks = 100;
         private readonly IEnumerable<ILogProcessor> _logProcessors;
         private readonly ParserStatusFactory _parserStatusFactory;
         private readonly IStatusPublisher _statusPublisher;
@@ -75,7 +76,7 @@ namespace EQLogParser
                     ProcessLine(line);
                 }
 
-                if (tickCount >= 500)//draw ever 500ms~
+                if (tickCount >= PublishIntervalTicks)
                 {
                     await PublishStatusAsync(cancellationToken);
                     tickCount = 0;
