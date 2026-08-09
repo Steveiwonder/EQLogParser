@@ -1,6 +1,8 @@
 const connectionState = document.getElementById("connectionState");
 const connectionMeta = document.getElementById("connectionMeta");
 const shownSummary = document.getElementById("shownSummary");
+const themeToggle = document.getElementById("themeToggle");
+const themeLabel = document.getElementById("themeLabel");
 const castName = document.getElementById("castName");
 const castState = document.getElementById("castState");
 const playersContainer = document.getElementById("players");
@@ -37,7 +39,8 @@ const entityChoices = document.getElementById("entityChoices");
 const storageKeys = {
   player: "eqlogparser.myPlayerName",
   pet: "eqlogparser.myPetName",
-  focus: "eqlogparser.focus"
+  focus: "eqlogparser.focus",
+  theme: "eqlogparser.theme"
 };
 
 const state = {
@@ -46,11 +49,14 @@ const state = {
   myPlayerName: localStorage.getItem(storageKeys.player) || "",
   myPetName: localStorage.getItem(storageKeys.pet) || "",
   focus: localStorage.getItem(storageKeys.focus) !== "false",
+  theme: localStorage.getItem(storageKeys.theme) || "retro",
   openSelector: null,
   query: "",
   lastStatusAt: null
 };
 
+applyTheme();
+themeToggle.addEventListener("click", toggleTheme);
 playerSelector.addEventListener("click", () => openSelector("player", playerSelector));
 petSelector.addEventListener("click", () => openSelector("pet", petSelector));
 clearPlayerSelection.addEventListener("click", event => clearSelection(event, "player"));
@@ -74,6 +80,18 @@ entitySearch.addEventListener("keydown", event => {
 function setConnectionState(text, className) {
   connectionState.className = `live-pill ${className}`;
   connectionMeta.textContent = text;
+}
+
+function applyTheme() {
+  document.body.dataset.theme = state.theme;
+  themeLabel.textContent = state.theme === "retro" ? "MODERN" : "RETRO";
+}
+
+function toggleTheme() {
+  state.theme = state.theme === "retro" ? "modern" : "retro";
+  localStorage.setItem(storageKeys.theme, state.theme);
+  applyTheme();
+  renderDpsChart();
 }
 
 function formatTime(seconds) {
@@ -359,7 +377,8 @@ function renderDpsChart() {
   const chartWidth = width - chartPadding.left - chartPadding.right;
   const chartHeight = height - chartPadding.top - chartPadding.bottom;
 
-  ctx.strokeStyle = "#5aa8ff";
+  const chartTheme = getChartTheme();
+  ctx.strokeStyle = chartTheme.line;
   ctx.lineWidth = 2;
   ctx.beginPath();
   values.forEach((value, index) => {
@@ -374,16 +393,16 @@ function renderDpsChart() {
   ctx.stroke();
 
   const gradient = ctx.createLinearGradient(0, chartPadding.top, 0, height - chartPadding.bottom);
-  gradient.addColorStop(0, "rgba(90, 168, 255, 0.28)");
-  gradient.addColorStop(1, "rgba(90, 168, 255, 0)");
+  gradient.addColorStop(0, chartTheme.fillStart);
+  gradient.addColorStop(1, chartTheme.fillEnd);
   ctx.lineTo(width - chartPadding.right, height - chartPadding.bottom);
   ctx.lineTo(chartPadding.left, height - chartPadding.bottom);
   ctx.closePath();
   ctx.fillStyle = gradient;
   ctx.fill();
 
-  ctx.fillStyle = "#6b7684";
-  ctx.font = "10px 'IBM Plex Mono', monospace";
+  ctx.fillStyle = chartTheme.text;
+  ctx.font = chartTheme.font;
   ctx.textAlign = "left";
   ctx.fillText(`${Math.ceil(maxValue)} max`, 6, chartPadding.top + 4);
   ctx.fillText("60s", chartPadding.left, height - 5);
@@ -396,7 +415,8 @@ function drawChartGrid(ctx, width, height) {
   const right = 10;
   const top = 12;
   const bottom = 18;
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.06)";
+  const chartTheme = getChartTheme();
+  ctx.strokeStyle = chartTheme.grid;
   ctx.lineWidth = 1;
 
   for (let i = 0; i <= 4; i++) {
@@ -414,6 +434,28 @@ function drawChartGrid(ctx, width, height) {
     ctx.lineTo(x, height - bottom);
     ctx.stroke();
   }
+}
+
+function getChartTheme() {
+  if (document.body.dataset.theme === "retro") {
+    return {
+      line: "#4a6fa5",
+      fillStart: "rgba(74, 111, 165, 0.42)",
+      fillEnd: "rgba(74, 111, 165, 0)",
+      grid: "rgba(203, 183, 132, 0.14)",
+      text: "#8f938c",
+      font: "16px 'VT323', monospace"
+    };
+  }
+
+  return {
+    line: "#5aa8ff",
+    fillStart: "rgba(90, 168, 255, 0.28)",
+    fillEnd: "rgba(90, 168, 255, 0)",
+    grid: "rgba(255, 255, 255, 0.06)",
+    text: "#6b7684",
+    font: "10px 'IBM Plex Mono', monospace"
+  };
 }
 
 function getSelectedDamageActor() {
