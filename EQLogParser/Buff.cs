@@ -27,7 +27,12 @@ namespace EQLogParser
 
         public void Expire()
         {
-            Expires = DateTime.Now.AddSeconds(-1);
+            Expire(DateTime.Now.AddSeconds(-1));
+        }
+
+        public void Expire(DateTime expiredAt)
+        {
+            Expires = expiredAt;
         }
     }
 }

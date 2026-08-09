@@ -57,7 +57,9 @@ namespace EQLogParser.Processors
                 ? _match.Groups["target"].Value.Trim()
                 : PetTargetName;
 
-            _buffManager.ExpireOrAddBuff(targetName, spell.ToBuff(line.When, duration.Value));
+            Buff buff = spell.ToBuff(line.When.Subtract(duration.Value), duration.Value);
+            buff.Expire(line.When);
+            _buffManager.ExpireOrAddBuff(targetName, buff);
             _match = null;
         }
     }

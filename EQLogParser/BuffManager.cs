@@ -44,12 +44,12 @@ namespace EQLogParser
             }
         }
 
-        public void ExpireBuffs(string playerName, params string[] buffNames)
+        public void ExpireBuffs(string playerName, DateTime expiredAt, params string[] buffNames)
         {
             Player player = GetPlayer(playerName);
             foreach (string buffName in buffNames)
             {
-                player.ExpireBuff(buffName);
+                player.ExpireBuff(buffName, expiredAt);
             }
         }
 

@@ -41,7 +41,7 @@ namespace EQLogParser.Processors
         public void Process(LogLine line)
         {
             Spell[] spells = _spell.GroupBy(x => x.Name).Select(x => x.First()).ToArray();
-            _buffManager.ExpireBuffs("__YOU__", spells.Select(x => x.Name).ToArray());
+            _buffManager.ExpireBuffs("__YOU__", line.When, spells.Select(x => x.Name).ToArray());
 
             if (spells.Length != 1)
             {
@@ -53,7 +53,9 @@ namespace EQLogParser.Processors
             TimeSpan? duration = _spellDurationCalculator.GetDuration(spell);
             if (duration != null && duration.Value.TotalMilliseconds > 0)
             {
-                _buffManager.ExpireOrAddBuff("__YOU__", spell.ToBuff(line.When, duration.Value));
+                Buff buff = spell.ToBuff(line.When.Subtract(duration.Value), duration.Value);
+                buff.Expire(line.When);
+                _buffManager.ExpireOrAddBuff("__YOU__", buff);
             }
 
             _spell = null;

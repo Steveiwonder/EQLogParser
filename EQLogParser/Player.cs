@@ -40,19 +40,18 @@ namespace EQLogParser
         {
             if (_buffs.ContainsKey(buff.Name))
             {
-                _buffs[buff.Name].Expire();
+                _buffs[buff.Name].Expire(buff.Expires);
                 return;
             }
 
-            buff.Expire();
             _buffs.Add(buff.Name, buff);
         }
 
-        public void ExpireBuff(string buffName)
+        public void ExpireBuff(string buffName, DateTime expiredAt)
         {
             if (_buffs.ContainsKey(buffName))
             {
-                _buffs[buffName].Expire();
+                _buffs[buffName].Expire(expiredAt);
             }
         }
 
