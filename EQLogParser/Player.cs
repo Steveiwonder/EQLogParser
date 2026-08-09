@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace EQLogParser
 {
@@ -11,6 +13,17 @@ namespace EQLogParser
         public IEnumerable<Buff> GetBuffs()
         {
             return _buffs.Values;
+        }
+
+        public void PruneExpiredBefore(DateTime cutoff)
+        {
+            foreach (string buffName in _buffs
+                .Where(x => x.Value.Expires < cutoff)
+                .Select(x => x.Key)
+                .ToArray())
+            {
+                _buffs.Remove(buffName);
+            }
         }
 
         public void ApplyBuff(Buff buff)
